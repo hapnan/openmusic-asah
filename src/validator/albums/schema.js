@@ -1,15 +1,17 @@
-const joi = require("joi");
+'use strict';
+
+const joi = require('joi');
 
 const AlbumPayloadSchema = joi.object({
-  name: joi.string().required(),
-  year: joi
-    .number()
-    .integer()
-    .min(1900)
-    .max(new Date().getFullYear())
-    .required(),
+    name: joi.string().required(),
+    year: joi
+        .number()
+        .integer()
+        .min(1900)
+        .max(new Date().getFullYear())
+        .required()
 });
 
 module.exports = {
-  AlbumPayloadSchema,
+    AlbumPayloadSchema
 };
