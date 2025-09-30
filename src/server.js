@@ -3,45 +3,96 @@
 require('dotenv').config();
 
 const Hapi = require('@hapi/hapi');
+const Jwt = require('@hapi/jwt');
+
 const songs = require('./api/songs');
 const albums = require('./api/albums');
+
 const SongsService = require('./services/postgres/SongsService');
 const SongsValidator = require('./validator/songs');
+
 const AlbumsService = require('./services/postgres/AlbumService');
 const AlbumsValidator = require('./validator/albums');
+
+const auth = require('./api/auth');
+const AuthService = require('./services/postgres/AuthService');
+const TokenManager = require('./tokenize/TokenManager');
+const AuthValidator = require('./validator/auth');
+
+const users = require('./api/users');
+const UsersService = require('./services/postgres/UsersService');
+const UsersValidator = require('./validator/users');
+
 const ClientError = require('./exeptions/ClientError');
 
 const init = async () => {
     const songsService = new SongsService();
     const albumsService = new AlbumsService();
+    const authService = new AuthService();
+    const usersService = new UsersService();
     const server = Hapi.server({
         port: process.env.PORT || 3000,
         host: process.env.HOST || 'localhost',
         routes: {
             cors: {
-                origin: ['*']
-            }
-        }
+                origin: ['*'],
+            },
+        },
     });
 
-    await server.register({
-        plugin: songs,
-        options: {
-            service: songsService,
-            validator: SongsValidator
-        }
+    await server.register([{ plugin: Jwt }]);
+
+    server.auth.strategy('openmusic_jwt', 'jwt', {
+        keys: process.env.ACCESS_TOKEN_KEY,
+        verify: {
+            aud: false,
+            iss: false,
+            sub: false,
+            maxAgeSec: process.env.ACCESS_TOKEN_AGE,
+        },
+        validate: (artifacts) => ({
+            isValid: true,
+            credentials: {
+                id: artifacts.decoded.payload.id,
+            },
+        }),
     });
 
-    await server.register({
-        plugin: albums,
-        options: {
-            service: albumsService,
-            validator: AlbumsValidator
-        }
-    });
+    await server.register([
+        {
+            plugin: songs,
+            options: {
+                service: songsService,
+                validator: SongsValidator,
+            },
+        },
+        {
+            plugin: albums,
+            options: {
+                service: albumsService,
+                validator: AlbumsValidator,
+            },
+        },
+        {
+            plugin: users,
+            options: {
+                service: usersService,
+                validator: UsersValidator,
+            },
+        },
+        {
+            plugin: auth,
+            options: {
+                authService,
+                usersService,
+                tokenManager: TokenManager,
+                validator: AuthValidator,
+            },
+        },
+    ]);
 
     server.ext('onPreResponse', (request, h) => {
-    // mendapatkan konteks response dari request
+        // mendapatkan konteks response dari request
         const { response } = request;
 
         if (response instanceof Error) {
@@ -49,7 +100,7 @@ const init = async () => {
             if (response instanceof ClientError) {
                 const newResponse = h.response({
                     status: 'fail',
-                    message: response.message
+                    message: response.message,
                 });
                 newResponse.code(response.statusCode);
                 return newResponse;
@@ -63,7 +114,7 @@ const init = async () => {
             // penanganan server error sesuai kebutuhan
             const newResponse = h.response({
                 status: 'error',
-                message: 'terjadi kegagalan pada server kami'
+                message: 'terjadi kegagalan pada server kami',
             });
             newResponse.code(500);
             return newResponse;
