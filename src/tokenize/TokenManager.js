@@ -10,6 +10,14 @@ const TokenManager = {
     generateRefreshToken: (payload) => {
         return jwt.token.generate(payload, process.env.REFRESH_TOKEN_KEY);
     },
+    getUserIdFromToken: (token) => {
+        try {
+            const artifacts = jwt.token.decode(token);
+            return artifacts.decoded.payload.id;
+        } catch (error) {
+            throw new InvariantError('Invalid token');
+        }
+    },
     verifyRefreshToken: (refreshToken) => {
         try {
             const artifacts = jwt.token.decode(refreshToken);
