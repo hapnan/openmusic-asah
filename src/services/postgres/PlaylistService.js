@@ -51,20 +51,19 @@ class PlaylistService {
         return result.rows[0].id;
     }
 
-    async getPlaylists(owner) {
+    async getPlaylists(userId) {
         const query = {
-            text: `SELECT p.id, p.name, u.username
+            text: `SELECT DISTINCT p.id, p.name, u.username
                    FROM playlists p
                    JOIN users u ON p.owner = u.id
-                   WHERE p.owner = $1`,
-            values: [owner],
+                   LEFT JOIN collaborations c ON p.id = c.playlist_id
+                   WHERE p.owner = $1 OR c.user_id = $1`,
+            values: [userId],
         };
 
         const result = await this._pool.query(query);
-        if (!result.rows.length) {
-            throw new NotFoundError('Playlist tidak ditemukan');
-        }
 
+        // Don't throw error if no playlists found - return empty array instead
         return result.rows;
     }
 
@@ -129,10 +128,10 @@ class PlaylistService {
         }
     }
 
-    async verifyPlaylistOwner(id, owner) {
+    async verifyPlaylistOwner(playlistId, owner) {
         const query = {
             text: 'SELECT owner FROM playlists WHERE id = $1',
-            values: [id],
+            values: [playlistId],
         };
 
         const result = await this._pool.query(query);
@@ -148,22 +147,24 @@ class PlaylistService {
         }
     }
 
-    async verifyPlaylistAccess(id, userId) {
-        const query = {
-            text: 'SELECT owner FROM playlists WHERE id = $1',
-            values: [id],
-        };
+    async verifyPlaylistAccess(playlistId, userId) {
+        try {
+            await this.verifyPlaylistOwner(playlistId, userId);
+        } catch (error) {
+            if (error instanceof AuthorizationError) {
+                const query = {
+                    text: 'SELECT * FROM collaborations WHERE playlist_id = $1 AND user_id = $2',
+                    values: [playlistId, userId],
+                };
+                const result = await this._pool.query(query);
 
-        const result = await this._pool.query(query);
-
-        if (!result.rows.length) {
-            throw new AuthorizationError('Playlist tidak ditemukan');
-        }
-
-        const playlist = result.rows[0];
-
-        if (playlist.owner !== userId) {
-            throw new AuthorizationError('Anda tidak berhak mengakses resource ini');
+                if (!result.rows.length) {
+                    throw new AuthorizationError('Anda tidak berhak mengakses resource ini');
+                }
+            } else if (error instanceof NotFoundError) {
+                throw error; // Re-throw NotFoundError
+            }
+            // If not the owner, check for collaboration
         }
     }
 }

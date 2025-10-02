@@ -36,7 +36,9 @@ class PlaylistHandler {
 
     async getPlaylistsHandler(request) {
         const { id: userId } = request.auth.credentials;
-        const playlists = await this._playlistService.getPlaylists(userId); // Pass userId as owner
+
+        const playlists = await this._playlistService.getPlaylists(userId);
+
         return {
             status: 'success',
             data: {
@@ -49,7 +51,8 @@ class PlaylistHandler {
         const { id } = request.params;
         const { id: credentialId } = request.auth.credentials;
 
-        await this._playlistService.verifyPlaylistOwner(id, credentialId);
+        await this._playlistService.verifyPlaylistAccess(id, credentialId);
+
         const playlist = await this._playlistService.getPlaylistWithSongs(id);
 
         return {
@@ -63,7 +66,9 @@ class PlaylistHandler {
         const { id } = request.params;
         const { id: credentialId } = request.auth.credentials;
 
+        // Only owners can delete playlists
         await this._playlistService.verifyPlaylistOwner(id, credentialId);
+
         await this._playlistService.deletePlaylistById(id);
         return {
             status: 'success',
@@ -76,10 +81,8 @@ class PlaylistHandler {
         const { songId } = request.payload;
         const { id: credentialId } = request.auth.credentials;
 
-        // First verify ownership/access
-        await this._playlistService.verifyPlaylistOwner(playlistId, credentialId);
+        await this._playlistService.verifyPlaylistAccess(playlistId, credentialId);
 
-        // Then add song to playlist
         await this._playlistService.addSongToPlaylist(playlistId, songId);
 
         const response = h.response({
@@ -95,10 +98,8 @@ class PlaylistHandler {
         const { songId } = request.payload;
         const { id: credentialId } = request.auth.credentials;
 
-        // First verify ownership
-        await this._playlistService.verifyPlaylistOwner(playlistId, credentialId);
+        await this._playlistService.verifyPlaylistAccess(playlistId, credentialId);
 
-        // Then delete song from playlist
         await this._playlistService.deleteSongFromPlaylist(playlistId, songId);
 
         return {
