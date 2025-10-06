@@ -31,15 +31,23 @@ const collaborations = require('./api/collaboration');
 const CollaborationService = require('./services/postgres/CollaborationService');
 const CollaborationValidator = require('./validator/collaboration');
 
+const likes = require('./api/likes');
+const LikeService = require('./services/postgres/LikeService');
+const LikeValidator = require('./validator/likes');
+
+const CacheService = require('./services/redis/CacheService');
+
 const ClientError = require('./exeptions/ClientError');
 
 const init = async () => {
+    const cacheService = new CacheService();
     const songsService = new SongsService();
     const albumsService = new AlbumsService();
     const authService = new AuthService();
     const usersService = new UsersService();
-    const collaborationsService = new CollaborationService(); // Create collaboration service
-    const playlistsService = new PlaylistsService(collaborationsService); // Pass to PlaylistService
+    const collaborationsService = new CollaborationService();
+    const playlistsService = new PlaylistsService(collaborationsService);
+    const likeService = new LikeService(cacheService);
     const server = Hapi.server({
         port: process.env.PORT || 3000,
         host: process.env.HOST || 'localhost',
@@ -114,14 +122,20 @@ const init = async () => {
                 validator: CollaborationValidator,
             },
         },
+        {
+            plugin: likes,
+            options: {
+                likeService,
+                albumsService,
+                validator: LikeValidator,
+            },
+        },
     ]);
 
     server.ext('onPreResponse', (request, h) => {
-        // mendapatkan konteks response dari request
         const { response } = request;
 
         if (response instanceof Error) {
-            // penanganan client error secara internal.
             if (response instanceof ClientError) {
                 const newResponse = h.response({
                     status: 'fail',
@@ -131,12 +145,10 @@ const init = async () => {
                 return newResponse;
             }
 
-            // mempertahankan penanganan client error oleh hapi secara native, seperti 404, etc.
             if (!response.isServer) {
                 return h.continue;
             }
 
-            // penanganan server error sesuai kebutuhan
             const newResponse = h.response({
                 status: 'error',
                 message: 'terjadi kegagalan pada server kami',
@@ -145,7 +157,6 @@ const init = async () => {
             return newResponse;
         }
 
-        // jika bukan error, lanjutkan dengan response sebelumnya (tanpa terintervensi)
         return h.continue;
     });
 

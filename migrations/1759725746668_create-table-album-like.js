@@ -10,22 +10,16 @@ export const shorthands = undefined;
  */
 export const up = (pgm) => {
     pgm.createTable(
-        'activities',
+        'albums_likes',
         {
             id: {
                 type: 'VARCHAR(50)',
                 primaryKey: true,
             },
-            playlist_id: {
+            album_id: {
                 type: 'VARCHAR(50)',
                 notNull: true,
-                references: '"playlists"',
-                onDelete: 'CASCADE',
-            },
-            song_id: {
-                type: 'VARCHAR(50)',
-                notNull: true,
-                references: '"songs"',
+                references: '"albums"',
                 onDelete: 'CASCADE',
             },
             user_id: {
@@ -34,18 +28,31 @@ export const up = (pgm) => {
                 references: '"users"',
                 onDelete: 'CASCADE',
             },
-            action: {
-                type: 'VARCHAR(10)',
+            is_liked: {
+                type: 'BOOLEAN',
                 notNull: true,
             },
-            time: {
+            created_at: {
                 type: 'TIMESTAMP',
                 notNull: true,
+                default: pgm.func('CURRENT_TIMESTAMP'),
             },
         },
         {
             ifNotExists: true,
         }
+    );
+
+    pgm.createIndex('albums_likes', 'album_id');
+    pgm.addConstraint(
+        'albums_likes',
+        'fk_albums_likes.album_id_albums.id',
+        'FOREIGN KEY(album_id) REFERENCES albums(id) ON DELETE CASCADE'
+    );
+    pgm.addConstraint(
+        'albums_likes',
+        'fk_albums_likes.user_id_users.id',
+        'FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE'
     );
 };
 
@@ -55,5 +62,5 @@ export const up = (pgm) => {
  * @returns {Promise<void> | void}
  */
 export const down = (pgm) => {
-    pgm.dropTable('activities');
+    pgm.dropTable('albums_likes');
 };
