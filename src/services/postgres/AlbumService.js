@@ -64,11 +64,9 @@ class AlbumService {
             for (const song of songsResult.rows) {
                 resultAlbum.songs.push(song);
             }
-
-            return resultAlbum;
         }
 
-        return result.rows[0];
+        return resultAlbum;
     }
 
     async editAlbumById(id, { name, year }) {
