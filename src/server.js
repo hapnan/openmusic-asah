@@ -58,7 +58,6 @@ const init = async () => {
     const collaborationsService = new CollaborationService();
     const playlistsService = new PlaylistsService(collaborationsService);
     const likeService = new LikeService(cacheService);
-    const producerService = new ProducerService();
     const storageService = new StrorageService(path.resolve(__dirname, 'api/uploads/file/images'));
 
     const server = Hapi.server({
@@ -144,7 +143,7 @@ const init = async () => {
             plugin: exportsPlugin,
             options: {
                 playlistsService,
-                producerService,
+                producerService: ProducerService,
                 validator: ExportValidator,
             },
         },
