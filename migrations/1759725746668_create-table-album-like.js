@@ -16,23 +16,23 @@ export const up = (pgm) => {
         type: 'VARCHAR(50)',
         primaryKey: true,
       },
-      album_id: {
+      albumId: {
         type: 'VARCHAR(50)',
         notNull: true,
         references: '"albums"',
         onDelete: 'CASCADE',
       },
-      user_id: {
+      userId: {
         type: 'VARCHAR(50)',
         notNull: true,
         references: '"users"',
         onDelete: 'CASCADE',
       },
-      is_liked: {
+      isLiked: {
         type: 'BOOLEAN',
         notNull: true,
       },
-      created_at: {
+      createdAt: {
         type: 'TIMESTAMP',
         notNull: true,
         default: pgm.func('CURRENT_TIMESTAMP'),

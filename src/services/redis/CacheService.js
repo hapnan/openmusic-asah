@@ -5,7 +5,9 @@ const redis = require('redis');
 class CacheService {
   constructor() {
     this._client = redis.createClient({
-      url: process.env.REDIS_SERVER
+      socket: {
+        host: process.env.REDIS_HOST,
+      },
     });
 
     this._client.on('error', (error) => {

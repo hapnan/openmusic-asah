@@ -55,7 +55,7 @@ class PlaylistService {
     const activityId = `activity-${nanoid()}`;
     const time = new Date().toISOString();
     const activityQuery = {
-      text: 'INSERT INTO activities (id, playlist_id, song_id, user_id, action, time) VALUES($1, $2, $3, $4, $5, $6)',
+      text: 'INSERT INTO activities (id, playlistId, songId, userId, action, time) VALUES($1, $2, $3, $4, $5, $6)',
       values: [activityId, playlistId, songId, userId, 'add', time] // Use userId instead of playlist owner
     };
     await this._pool.query(activityQuery);
@@ -68,8 +68,8 @@ class PlaylistService {
       text: `SELECT DISTINCT p.id, p.name, u.username
                    FROM playlists p
                    JOIN users u ON p.owner = u.id
-                   LEFT JOIN collaborations c ON p.id = c.playlist_id
-                   WHERE p.owner = $1 OR c.user_id = $1`,
+                   LEFT JOIN collaborations c ON p.id = c.playlistId
+                   WHERE p.owner = $1 OR c.userId = $1`,
       values: [userId]
     };
 
@@ -93,8 +93,8 @@ class PlaylistService {
                         ) AS songs
                     FROM playlists p
                     JOIN users u ON p.owner = u.id
-                    LEFT JOIN playlist_songs ps ON p.id = ps.playlist_id
-                    LEFT JOIN songs s ON ps.song_id = s.id
+                    LEFT JOIN playlist_songs ps ON p.id = ps.playlistId
+                    LEFT JOIN songs s ON ps.songId = s.id
                     WHERE p.id = $1
                     GROUP BY p.id, u.username;`,
       values: [id]
@@ -134,7 +134,7 @@ class PlaylistService {
 
     // Then try to delete it from the playlist
     const query = {
-      text: 'DELETE FROM playlist_songs WHERE playlist_id = $1 AND song_id = $2 RETURNING id',
+      text: 'DELETE FROM playlist_songs WHERE playlistId = $1 AND songId = $2 RETURNING id',
       values: [playlistId, songId]
     };
 
@@ -147,7 +147,7 @@ class PlaylistService {
     const activityId = `activity-${nanoid()}`;
     const time = new Date().toISOString();
     const activityQuery = {
-      text: 'INSERT INTO activities (id, playlist_id, song_id, user_id, action, time) VALUES($1, $2, $3, $4, $5, $6)',
+      text: 'INSERT INTO activities (id, playlistId, songId, userId, action, time) VALUES($1, $2, $3, $4, $5, $6)',
       values: [activityId, playlistId, songId, userId, 'delete', time] // Use userId instead of playlist owner
     };
     await this._pool.query(activityQuery);
@@ -179,7 +179,7 @@ class PlaylistService {
     catch (error) {
       if (error instanceof AuthorizationError) {
         const query = {
-          text: 'SELECT * FROM collaborations WHERE playlist_id = $1 AND user_id = $2',
+          text: 'SELECT * FROM collaborations WHERE playlistId = $1 AND userId = $2',
           values: [playlistId, userId]
         };
         const result = await this._pool.query(query);
@@ -207,9 +207,9 @@ class PlaylistService {
                        ) ORDER BY a.time ASC
                    ) AS activities
                    FROM playlists p
-                   JOIN activities a ON p.id = a.playlist_id
-                   JOIN songs s ON a.song_id = s.id
-                   JOIN users u ON a.user_id = u.id
+                   JOIN activities a ON p.id = a.playlistId
+                   JOIN songs s ON a.songId = s.id
+                   JOIN users u ON a.userId = u.id
                    WHERE p.id = $1
                    GROUP BY p.id`,
       values: [playlistId]

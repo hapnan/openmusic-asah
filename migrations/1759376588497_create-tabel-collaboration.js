@@ -14,13 +14,13 @@ export const up = (pgm) => {
       type: 'VARCHAR(50)',
       primaryKey: true,
     },
-    playlist_id: {
+    playlistId: {
       type: 'VARCHAR(50)',
       notNull: true,
       references: '"playlists"',
       onDelete: 'CASCADE',
     },
-    user_id: {
+    userId: {
       type: 'VARCHAR(50)',
       notNull: true,
       references: '"users"',
