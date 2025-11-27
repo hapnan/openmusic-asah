@@ -50,155 +50,156 @@ const CacheService = require('./services/redis/CacheService');
 const ClientError = require('./exeptions/ClientError');
 
 const init = async () => {
-  const cacheService = new CacheService();
-  const songsService = new SongsService();
-  const albumsService = new AlbumsService();
-  const authService = new AuthService();
-  const usersService = new UsersService();
-  const collaborationsService = new CollaborationService();
-  const playlistsService = new PlaylistsService(collaborationsService);
-  const likeService = new LikeService(cacheService);
-  const storageService = new StrorageService(path.resolve(__dirname, 'api/uploads/file/images'));
+    const cacheService = new CacheService();
+    const songsService = new SongsService();
+    const albumsService = new AlbumsService();
+    const authService = new AuthService();
+    const usersService = new UsersService();
+    const collaborationsService = new CollaborationService();
+    const playlistsService = new PlaylistsService(collaborationsService);
+    const likeService = new LikeService(cacheService);
+    const storageService = new StrorageService(path.resolve(__dirname, 'api/uploads/file/images'));
 
-  const server = Hapi.server({
-    port: process.env.PORT || 3000,
-    host: process.env.HOST || 'localhost',
-    routes: {
-      cors: {
-        origin: ['*']
-      }
-    }
-  });
+    const server = Hapi.server({
+        port: process.env.PORT || 3000,
+        host: process.env.HOST || 'localhost',
+        routes: {
+            cors: {
+                origin: ['*'],
+            },
+        },
+    });
 
-  await server.register([
-    { plugin: Jwt },
-  ]);
+    await server.register([
+        { plugin: Jwt },
+        {
+            plugin: Inert,
+        },
+    ]);
 
-  await server.register([Inert]);
+    server.auth.strategy('openmusic_jwt', 'jwt', {
+        keys: process.env.ACCESS_TOKEN_KEY,
+        verify: {
+            aud: false,
+            iss: false,
+            sub: false,
+            maxAgeSec: process.env.ACCESS_TOKEN_AGE,
+        },
+        validate: (artifacts) => ({
+            isValid: true,
+            credentials: {
+                id: artifacts.decoded.payload.id,
+            },
+        }),
+    });
 
-  server.auth.strategy('openmusic_jwt', 'jwt', {
-    keys: process.env.ACCESS_TOKEN_KEY,
-    verify: {
-      aud: false,
-      iss: false,
-      sub: false,
-      maxAgeSec: process.env.ACCESS_TOKEN_AGE
-    },
-    validate: (artifacts) => ({
-      isValid: true,
-      credentials: {
-        id: artifacts.decoded.payload.id
-      }
-    })
-  });
+    await server.register([
+        {
+            plugin: songs,
+            options: {
+                service: songsService,
+                validator: SongsValidator,
+            },
+        },
+        {
+            plugin: albums,
+            options: {
+                service: albumsService,
+                validator: AlbumsValidator,
+            },
+        },
+        {
+            plugin: users,
+            options: {
+                service: usersService,
+                validator: UsersValidator,
+            },
+        },
+        {
+            plugin: auth,
+            options: {
+                authService,
+                usersService,
+                tokenManager: TokenManager,
+                validator: AuthValidator,
+            },
+        },
+        {
+            plugin: playlists,
+            options: {
+                service: playlistsService,
+                validator: PlaylistValidator,
+            },
+        },
+        {
+            plugin: collaborations,
+            options: {
+                service: collaborationsService,
+                playlistsService: playlistsService,
+                validator: CollaborationValidator,
+            },
+        },
+        {
+            plugin: exportsPlugin,
+            options: {
+                playlistsService,
+                producerService: ProducerService,
+                validator: ExportValidator,
+            },
+        },
+        {
+            plugin: uploads,
+            options: {
+                storageService,
+                albumsService,
+                validator: UploadsValidator,
+            },
+        },
+        {
+            plugin: likes,
+            options: {
+                likeService,
+                albumsService,
+                validator: LikeValidator,
+            },
+        },
+    ]);
 
-  await server.register([
-    {
-      plugin: songs,
-      options: {
-        service: songsService,
-        validator: SongsValidator
-      }
-    },
-    {
-      plugin: albums,
-      options: {
-        service: albumsService,
-        validator: AlbumsValidator
-      }
-    },
-    {
-      plugin: users,
-      options: {
-        service: usersService,
-        validator: UsersValidator
-      }
-    },
-    {
-      plugin: auth,
-      options: {
-        authService,
-        usersService,
-        tokenManager: TokenManager,
-        validator: AuthValidator
-      }
-    },
-    {
-      plugin: playlists,
-      options: {
-        service: playlistsService,
-        validator: PlaylistValidator
-      }
-    },
-    {
-      plugin: collaborations,
-      options: {
-        service: collaborationsService,
-        playlistsService,
-        validator: CollaborationValidator
-      }
-    },
-    {
-      plugin: exportsPlugin,
-      options: {
-        playlistsService,
-        producerService: ProducerService,
-        validator: ExportValidator
-      }
-    },
-    {
-      plugin: uploads,
-      options: {
-        storageService,
-        albumsService,
-        validator: UploadsValidator
-      }
-    },
-    {
-      plugin: likes,
-      options: {
-        likeService,
-        albumsService,
-        validator: LikeValidator
-      }
-    }
-  ]);
+    server.ext('onPreResponse', (request, h) => {
+        const { response } = request;
 
-  server.ext('onPreResponse', (request, h) => {
-    const { response } = request;
+        if (response instanceof Error) {
+            if (response instanceof ClientError) {
+                const newResponse = h.response({
+                    status: 'fail',
+                    message: response.message,
+                });
+                newResponse.code(response.statusCode);
+                return newResponse;
+            }
 
-    if (response instanceof Error) {
-      if (response instanceof ClientError) {
-        const newResponse = h.response({
-          status: 'fail',
-          message: response.message
-        });
-        newResponse.code(response.statusCode);
-        return newResponse;
-      }
+            if (!response.isServer) {
+                return h.continue;
+            }
 
-      if (!response.isServer) {
+            const newResponse = h.response({
+                status: 'error',
+                message: 'terjadi kegagalan pada server kami',
+            });
+            newResponse.code(500);
+            return newResponse;
+        }
+
         return h.continue;
-      }
+    });
 
-      const newResponse = h.response({
-        status: 'error',
-        message: 'terjadi kegagalan pada server kami'
-      });
-      newResponse.code(500);
-      return newResponse;
-    }
-
-    return h.continue;
-  });
-
-  await server.start();
-  console.log('Server running on %s', server.info.uri);
+    await server.start();
+    console.log('Server running on %s', server.info.uri);
 };
 
 process.on('unhandledRejection', (err) => {
-  console.log(err);
-  process.exit(1);
+    console.log(err);
+    process.exit(1);
 });
 
 init();
