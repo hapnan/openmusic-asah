@@ -14,7 +14,7 @@ class LikeService {
   async addLike(userId, albumId) {
     const id = `like-${nanoid()}`;
     const query = {
-      text: 'INSERT INTO albums_likes (id, userId, albumId, isLiked) VALUES($1, $2, $3, $4) RETURNING id',
+      text: 'INSERT INTO albums_likes (id, user_id, album_id, is_liked) VALUES($1, $2, $3, $4) RETURNING id',
       values: [id, userId, albumId, true]
     };
 
@@ -32,7 +32,7 @@ class LikeService {
 
   async removeLike(userId, albumId) {
     const query = {
-      text: 'DELETE FROM albums_likes WHERE userId = $1 AND albumId = $2 RETURNING id',
+      text: 'DELETE FROM albums_likes WHERE user_id = $1 AND album_id = $2 RETURNING id',
       values: [userId, albumId]
     };
 
@@ -60,7 +60,7 @@ class LikeService {
     catch (error) {
       // If not in cache, get from database
       const query = {
-        text: 'SELECT COUNT(id) AS likes FROM albums_likes WHERE albumId = $1',
+        text: 'SELECT COUNT(id) AS likes FROM albums_likes WHERE album_id = $1',
         values: [albumId]
       };
 
@@ -84,7 +84,7 @@ class LikeService {
 
   async isAlbumLikedByUser(userId, albumId) {
     const query = {
-      text: 'SELECT id FROM albums_likes WHERE userId = $1 AND albumId = $2',
+      text: 'SELECT id FROM albums_likes WHERE user_id = $1 AND album_id = $2',
       values: [userId, albumId]
     };
 

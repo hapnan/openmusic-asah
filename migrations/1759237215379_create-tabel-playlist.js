@@ -24,12 +24,12 @@ export const up = (pgm) => {
       references: '"users"',
       onDelete: 'CASCADE',
     },
-    createdAt: {
+    created_at: {
       type: 'TIMESTAMP',
       notNull: true,
       default: pgm.func('CURRENT_TIMESTAMP'),
     },
-    updatedAt: {
+    updated_at: {
       type: 'TIMESTAMP',
       notNull: true,
       default: pgm.func('CURRENT_TIMESTAMP'),
@@ -41,19 +41,19 @@ export const up = (pgm) => {
       type: 'VARCHAR(50)',
       primaryKey: true,
     },
-    playlistId: {
+    playlist_id: {
       type: 'VARCHAR(50)',
       notNull: true,
       references: '"playlists"',
       onDelete: 'CASCADE',
     },
-    songId: {
+    song_id: {
       type: 'VARCHAR(50)',
       notNull: true,
       references: '"songs"',
       onDelete: 'CASCADE',
     },
-    addedAt: {
+    added_at: {
       type: 'TIMESTAMP',
       notNull: true,
       default: pgm.func('CURRENT_TIMESTAMP'),
