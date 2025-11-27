@@ -9,36 +9,36 @@ export const shorthands = undefined;
  * @returns {Promise<void> | void}
  */
 export const up = (pgm) => {
-    pgm.createTable('collaborations', {
-        id: {
-            type: 'VARCHAR(50)',
-            primaryKey: true,
-        },
-        playlist_id: {
-            type: 'VARCHAR(50)',
-            notNull: true,
-            references: '"playlists"',
-            onDelete: 'CASCADE',
-        },
-        user_id: {
-            type: 'VARCHAR(50)',
-            notNull: true,
-            references: '"users"',
-            onDelete: 'CASCADE',
-        },
-    });
-    pgm.createIndex('collaborations', 'playlist_id');
-    pgm.createIndex('collaborations', 'user_id');
-    pgm.addConstraint(
-        'collaborations',
-        'fk_collaborations_playlist_id',
-        'FOREIGN KEY(playlist_id) REFERENCES playlists(id) ON DELETE CASCADE'
-    );
-    pgm.addConstraint(
-        'collaborations',
-        'fk_collaborations_user_id',
-        'FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE'
-    );
+  pgm.createTable('collaborations', {
+    id: {
+      type: 'VARCHAR(50)',
+      primaryKey: true,
+    },
+    playlist_id: {
+      type: 'VARCHAR(50)',
+      notNull: true,
+      references: '"playlists"',
+      onDelete: 'CASCADE',
+    },
+    user_id: {
+      type: 'VARCHAR(50)',
+      notNull: true,
+      references: '"users"',
+      onDelete: 'CASCADE',
+    },
+  });
+  pgm.createIndex('collaborations', 'playlist_id');
+  pgm.createIndex('collaborations', 'user_id');
+  pgm.addConstraint(
+    'collaborations',
+    'fk_collaborations_playlist_id',
+    'FOREIGN KEY(playlist_id) REFERENCES playlists(id) ON DELETE CASCADE'
+  );
+  pgm.addConstraint(
+    'collaborations',
+    'fk_collaborations_user_id',
+    'FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE'
+  );
 };
 
 /**
@@ -47,5 +47,5 @@ export const up = (pgm) => {
  * @returns {Promise<void> | void}
  */
 export const down = (pgm) => {
-    pgm.dropTable('collaborations');
+  pgm.dropTable('collaborations');
 };

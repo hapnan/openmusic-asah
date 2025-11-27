@@ -9,12 +9,12 @@ export const shorthands = undefined;
  * @returns {Promise<void> | void}
  */
 export const up = (pgm) => {
-    pgm.createTable('auth', {
-        token: {
-            type: 'TEXT',
-            primaryKey: true,
-        },
-    });
+  pgm.createTable('auth', {
+    token: {
+      type: 'TEXT',
+      primaryKey: true,
+    },
+  });
 };
 
 /**
@@ -23,7 +23,7 @@ export const up = (pgm) => {
  * @returns {Promise<void> | void}
  */
 export const down = (pgm) => {
-    pgm.sql('IF EXISTS TABLE auth');
+  pgm.sql('IF EXISTS TABLE auth');
 
-    pgm.dropTable('auth');
+  pgm.dropTable('auth');
 };
