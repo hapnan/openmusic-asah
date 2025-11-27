@@ -10,7 +10,7 @@ export const shorthands = undefined;
  */
 export const up = (pgm) => {
     pgm.addColumn('albums', {
-        cover_url: {
+        coverUrl: {
             type: 'TEXT',
             notNull: false,
             default: null,
