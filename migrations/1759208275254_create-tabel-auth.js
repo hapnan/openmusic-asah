@@ -11,8 +11,7 @@ export const shorthands = undefined;
 export const up = (pgm) => {
   pgm.createTable('auth', {
     token: {
-      type: 'TEXT',
-      primaryKey: true,
+      type: 'TEXT'
     },
   });
 };
